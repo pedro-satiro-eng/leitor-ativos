@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <title>Leitor QR - Sistema de Ativos</title>
+
+  <script src="https://unpkg.com/html5-qrcode"
+          type="text/javascript"></script>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f9;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .card {
+      background: white;
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.15);
+    }
+
+    h2 {
+      margin-top: 5px;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    #resultado {
+
+      margin-top: 20px;
+      padding: 15px;
+
+      background: #e8f5e9;
+
+      border-radius: 10px;
+
+      font-weight: bold;
+
+      display: none;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="card">
+
+    <h2>Leitor QR Code</h2>
+
+    <p>
+      Aponte a câmera para o QR Code do equipamento.
+    </p>
+
+    <div id="reader"></div>
+
+    <div id="resultado"></div>
+
+  </div>
+
+
+<script>
+
+  var scanner =
+    new Html5Qrcode("reader");
+
+  var jaLido = false;
+
+
+  function enviarResultado(codigo) {
+
+    if (jaLido) return;
+
+    jaLido = true;
+
+
+    document.getElementById("resultado")
+      .style.display = "block";
+
+
+    document.getElementById("resultado")
+      .innerText =
+      "Equipamento identificado: " + codigo;
+
+
+    scanner.stop()
+      .then(function() {
+
+        if (window.opener) {
+
+          window.opener.postMessage(
+            {
+              tipo: "QR_EQUIPAMENTO",
+              codigo: codigo
+            },
+            "*"
+          );
+
+        }
+
+
+        setTimeout(function() {
+
+          window.close();
+
+        }, 700);
+
+      })
+
+
+      .catch(function() {
+
+        if (window.opener) {
+
+          window.opener.postMessage(
+            {
+              tipo: "QR_EQUIPAMENTO",
+              codigo: codigo
+            },
+            "*"
+          );
+
+        }
+
+      });
+
+  }
+
+
+  scanner.start(
+
+    {
+      facingMode: "environment"
+    },
+
+    {
+      fps: 10,
+
+      qrbox: {
+        width: 250,
+        height: 250
+      }
+
+    },
+
+
+    function(decodedText) {
+
+      enviarResultado(decodedText);
+
+    },
+
+
+    function(errorMessage) {
+
+      // Não mostrar erro durante a procura do QR.
+
+    }
+
+  )
+
+
+  .catch(function(error) {
+
+    document.getElementById("resultado")
+      .style.display = "block";
+
+
+    document.getElementById("resultado")
+      .innerText =
+      "Não foi possível acessar a câmera. " +
+      "Verifique a permissão da câmera no Safari.";
+
+  });
+
+</script>
+
+</body>
+
+</html>
