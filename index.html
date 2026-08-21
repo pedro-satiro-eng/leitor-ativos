@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 
-<html lang="pt-BR">
+<html>
 
 <head>
 
   <meta charset="UTF-8">
 
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
 
   <title>Leitor QR</title>
 
@@ -22,30 +24,24 @@
 
     body {
 
-      font-family: Arial;
-
-      background: #f4f4f9;
-
       margin: 0;
 
       padding: 20px;
+
+      font-family: Arial, sans-serif;
+
+      background: #111;
+
+      color: white;
 
       text-align: center;
 
     }
 
 
-    .card {
+    h2 {
 
-      max-width: 500px;
-
-      margin: auto;
-
-      background: white;
-
-      padding: 20px;
-
-      border-radius: 15px;
+      margin-top: 10px;
 
     }
 
@@ -54,14 +50,41 @@
 
       width: 100%;
 
-      margin-top: 20px;
+      max-width: 500px;
+
+      margin: 20px auto;
 
     }
 
 
     #resultado {
 
+      font-size: 20px;
+
+      font-weight: bold;
+
       margin-top: 20px;
+
+    }
+
+
+    .btn {
+
+      width: 100%;
+
+      max-width: 400px;
+
+      padding: 15px;
+
+      border: none;
+
+      border-radius: 8px;
+
+      background: #28a745;
+
+      color: white;
+
+      font-size: 18px;
 
       font-weight: bold;
 
@@ -75,96 +98,125 @@
 <body>
 
 
-<div class="card">
-
-  <h2>Leitor QR Code</h2>
-
-  <p>
-    Aponte a câmera para o equipamento.
-  </p>
+<h2>📷 Leitor QR Code</h2>
 
 
-  <div id="reader"></div>
+<div id="reader"></div>
 
 
-  <div id="resultado"></div>
-
+<div id="resultado">
+  Aponte a câmera para o QR Code
 </div>
+
+
+<br>
+
+
+<button
+  class="btn"
+  onclick="fecharLeitor()"
+>
+  ✓ Terminei
+</button>
 
 
 <script>
 
 
+var codigosLidos =
+  new Set();
+
+
+var ultimoCodigo =
+  "";
+
+
+var ultimoTempo =
+  0;
+
+
 var scanner =
-  new Html5Qrcode("reader");
+  new Html5Qrcode(
+    "reader",
+    {
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.QR_CODE
+      ]
+    }
+  );
 
 
-var jaLido =
-  false;
+function quandoLer(codigo) {
+
+  codigo =
+    String(codigo)
+      .trim()
+      .toUpperCase();
 
 
-function enviarResultado(codigo) {
+  if (!codigo) {
+    return;
+  }
 
-  if (jaLido) return;
 
-  jaLido = true;
+  var agora =
+    Date.now();
+
+
+  if (
+    codigo === ultimoCodigo &&
+    agora - ultimoTempo < 1500
+  ) {
+
+    return;
+  }
+
+
+  ultimoCodigo =
+    codigo;
+
+
+  ultimoTempo =
+    agora;
+
+
+  if (
+    codigosLidos.has(codigo)
+  ) {
+
+    document
+      .getElementById("resultado")
+      .innerText =
+      "⚠️ Já lido: " + codigo;
+
+    return;
+  }
+
+
+  codigosLidos.add(codigo);
 
 
   document
-    .getElementById(
-      "resultado"
-    )
+    .getElementById("resultado")
     .innerText =
-    "Equipamento: " + codigo;
+    "✅ Lido: " + codigo;
 
 
-  scanner
-    .stop()
-    .then(function() {
+  if (window.opener) {
 
-      window.opener.postMessage(
+    window.opener.postMessage(
 
-        {
-          tipo:
-            "QR_EQUIPAMENTO",
+      {
+        tipo:
+          "QR_EQUIPAMENTO",
 
-          codigo:
-            codigo
-        },
+        codigo:
+          codigo
+      },
 
-        "*"
-
-      );
-
-
-      setTimeout(
-        function() {
-
-          window.close();
-
-        },
-        500
-      );
-
-    })
-
-    .catch(function() {
-
-      window.opener.postMessage(
-
-        {
-          tipo:
-            "QR_EQUIPAMENTO",
-
-          codigo:
-            codigo
-        },
-
-        "*"
-
-      );
-
-    });
+      "*"
+    );
+  }
 
 }
 
@@ -172,10 +224,8 @@ function enviarResultado(codigo) {
 scanner.start(
 
   {
-    facingMode:
-      "environment"
+    facingMode: "environment"
   },
-
 
   {
 
@@ -188,36 +238,47 @@ scanner.start(
 
   },
 
-
   function(decodedText) {
 
-    enviarResultado(
+    quandoLer(
       decodedText
     );
 
   },
 
-
   function(errorMessage) {
-
-    // Ignora erros durante a procura.
 
   }
 
 )
 
-
 .catch(function(error) {
 
   document
-    .getElementById(
-      "resultado"
-    )
+    .getElementById("resultado")
     .innerText =
-    "Não foi possível acessar a câmera. " +
-    "Verifique a permissão da câmera.";
+    "❌ Não foi possível abrir a câmera.";
 
 });
+
+
+function fecharLeitor() {
+
+  scanner
+    .stop()
+    .then(function() {
+
+      window.close();
+
+    })
+
+    .catch(function() {
+
+      window.close();
+
+    });
+
+}
 
 </script>
 
